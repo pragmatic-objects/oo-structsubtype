@@ -1,0 +1,8 @@
+package ${this.packageName};
+
+<#list imports as import>
+import ${import.fullName};
+</#list>
+
+public interface ${this.name} extends ${supertypes?map(s -> s.name)?join(", ")} {
+}
