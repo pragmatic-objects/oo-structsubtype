@@ -14,7 +14,7 @@ TODO
 
 1. Add maven dependency:
 
-```java
+```xml
 <dependency>
     <groupId>com.pragmaticobjects.oo.structsubtype</groupId>
     <artifactId>structsubtype-codegen</artifactId>
