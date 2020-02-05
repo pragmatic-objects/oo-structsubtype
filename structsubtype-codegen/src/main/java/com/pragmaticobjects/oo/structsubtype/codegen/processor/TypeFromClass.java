@@ -51,7 +51,7 @@ class TypeFromClass implements Type {
 
     @Override
     public final String packageName() {
-        return clazz.getPackageName();
+        return clazz.getPackage().getName();
     }
 
     @Override
