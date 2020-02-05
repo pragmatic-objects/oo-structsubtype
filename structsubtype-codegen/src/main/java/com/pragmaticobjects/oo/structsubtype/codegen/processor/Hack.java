@@ -25,6 +25,8 @@
  */
 package com.pragmaticobjects.oo.structsubtype.codegen.processor;
 
+import com.pragmaticobjects.oo.meta.model.Type;
+import com.pragmaticobjects.oo.meta.model.TypeFromTypeMirror;
 import io.vavr.collection.List;
 import java.util.function.Supplier;
 import javax.lang.model.type.MirroredTypeException;
@@ -46,27 +48,29 @@ public class Hack {
     
     /**
      * @param supplier Method reference to the annotation field of type {@link Class}
-     * @return {@link TypeMirror} instance.
+     * @return {@link Type} instance.
      */
-    public static TypeMirror extractType(Supplier<Class> supplier) {
+    public static Type extractType(Supplier<Class> supplier) {
         try {
             Class type = supplier.get();
-            throw new RuntimeException("Unexpected extraction");
+            return new TypeFromClass(type);
         } catch(MirroredTypeException ex) {
-            return ex.getTypeMirror();
+            return new TypeFromTypeMirror(ex.getTypeMirror());
         }
     }
     
     /**
      * @param supplier Method reference to the annotation field of type {@link Class}
-     * @return {@link TypeMirror} instance.
+     * @return {@link Type} instances.
      */
-    public static List<TypeMirror> extractTypes(Supplier<Class[]> supplier) {
+    public static List<Type> extractTypes(Supplier<Class[]> supplier) {
         try {
             Class[] types = supplier.get();
-            throw new RuntimeException("Unexpected extraction");
+            return List.of(types).map(TypeFromClass::new);
         } catch(MirroredTypesException ex) {
-            return List.ofAll(ex.getTypeMirrors());
+            return List
+                    .ofAll(ex.getTypeMirrors())
+                    .map(TypeFromTypeMirror::new);
         }
     }
 }

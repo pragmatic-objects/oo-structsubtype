@@ -25,15 +25,16 @@
  */
 package com.pragmaticobjects.oo.structsubtype.codegen.processor;
 
+import com.pragmaticobjects.oo.meta.freemarker.FreemarkerArtifact;
 import com.pragmaticobjects.oo.meta.freemarker.FreemarkerArtifactModel;
 import com.pragmaticobjects.oo.meta.model.FAMStandard;
 import com.pragmaticobjects.oo.meta.model.Type;
-import com.pragmaticobjects.oo.meta.model.TypeFromTypeMirror;
 import com.pragmaticobjects.oo.meta.model.TypeReferential;
 import com.pragmaticobjects.oo.structsubtype.api.StructSubtype;
+import com.pragmaticobjects.oo.structsubtype.supertypes.CombinedSupertypes;
+import com.pragmaticobjects.oo.structsubtype.supertypes.SupertypesFromDeclaration;
 import io.vavr.Tuple2;
 import io.vavr.collection.HashMap;
-import io.vavr.collection.List;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Set;
@@ -63,17 +64,20 @@ public class SubtypingProcessor extends AbstractProcessor {
         for(Element elem : roundEnv.getElementsAnnotatedWith(StructSubtype.class)) {
             StructSubtype anno = elem.getAnnotation(StructSubtype.class);
             String packageName = ((PackageElement)elem).getQualifiedName().toString();
-            List<Type> types = List.ofAll(Hack.extractTypes(anno::inherits)).map(t -> new TypeFromTypeMirror(t));
             FreemarkerArtifactModel model = new FAMStandard(
                 new TypeReferential(packageName, anno.name()),
                 HashMap.ofEntries(
-                    new Tuple2<>("supertypes", types)
+                    new Tuple2<>(
+                        "supertypes",
+                        new CombinedSupertypes(
+                            new SupertypesFromDeclaration(anno)
+                        ).set()
+                    )
                 )
             );
-            StructSubtypeArtifact artifact = new StructSubtypeArtifact(
-                    packageName,
-                    anno.name(),
-                    types
+            FreemarkerArtifact artifact = new FreemarkerArtifact(
+                "structsubtype",
+                model
             );
             try {
                 JavaFileObject newSrc = processingEnv.getFiler().createSourceFile(model.<Type>get("this").getFullName());
