@@ -35,6 +35,7 @@ import com.pragmaticobjects.oo.structsubtype.supertypes.CombinedSupertypes;
 import com.pragmaticobjects.oo.structsubtype.supertypes.SupertypesFromDeclaration;
 import io.vavr.Tuple2;
 import io.vavr.collection.HashMap;
+import io.vavr.collection.HashSet;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Set;
@@ -45,7 +46,6 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
@@ -61,7 +61,10 @@ import javax.tools.JavaFileObject;
 public class SubtypingProcessor extends AbstractProcessor {
     @Override
     public final boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        for(Element elem : roundEnv.getElementsAnnotatedWith(StructSubtype.class)) {
+        HashSet<PackageElement> elements = HashSet
+            .ofAll(roundEnv.getElementsAnnotatedWith(StructSubtype.class))
+            .map(e -> (PackageElement) e);
+        for(PackageElement elem : elements) {
             StructSubtype anno = elem.getAnnotation(StructSubtype.class);
             String packageName = ((PackageElement)elem).getQualifiedName().toString();
             FreemarkerArtifactModel model = new FAMStandard(
