@@ -30,7 +30,7 @@ import com.pragmaticobjects.oo.structsubtype.api.StructSubtype;
 import com.pragmaticobjects.oo.tests.TestCase;
 import com.pragmaticobjects.oo.tests.junit5.TestsSuite;
 import com.test.*;
-import io.vavr.collection.List;
+import io.vavr.collection.HashSet;
 import java.lang.annotation.Annotation;
 
 /**
@@ -46,11 +46,10 @@ public class CrossDeclarationSubtypesTest extends TestsSuite {
                     new CrossDeclarationsSupertypes(
                         "com.test",
                         new Sample("T", A.class, B.class),
-                        List.of(
+                        HashSet.of(
                             new Sample("T1", A.class),
                             new Sample("T2", B.class),
-                            new Sample("T3", C.class)
-                                
+                            new Sample("T3", C.class)                                
                         )
                     ),
                     new FixedSupertypes(
@@ -65,11 +64,10 @@ public class CrossDeclarationSubtypesTest extends TestsSuite {
                     new CrossDeclarationsSupertypes(
                         "com.test",
                         new Sample("T", A.class, B.class, C.class),
-                        List.of(
+                        HashSet.of(
                             new Sample("T1", A.class, B.class),
                             new Sample("T2", B.class, C.class),
                             new Sample("T3", C.class, A.class)
-                                
                         )
                     ),
                     new FixedSupertypes(
@@ -78,10 +76,25 @@ public class CrossDeclarationSubtypesTest extends TestsSuite {
                         new TypeReferential("com.test", "T3")
                     )
                 )
+            ),
+            new TestCase(
+                "Complex subtyping: T derives T1",
+                new AssertSupertypesAreTheSame(
+                    new CrossDeclarationsSupertypes(
+                        "com.test",
+                        new Sample("T", A.class, B.class),
+                        HashSet.of(
+                            new Sample("T1", A.class),
+                            new Sample("T2", A.class, B.class, C.class)
+                        )
+                    ),
+                    new FixedSupertypes(
+                        new TypeReferential("com.test", "T1")
+                    )
+                )
             )
         );
     }
-    
     
     private static class Sample implements StructSubtype {
         private final String name;

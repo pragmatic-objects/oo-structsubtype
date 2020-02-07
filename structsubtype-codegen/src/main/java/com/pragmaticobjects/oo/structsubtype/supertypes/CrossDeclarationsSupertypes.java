@@ -30,7 +30,6 @@ import com.pragmaticobjects.oo.meta.model.TypeReferential;
 import com.pragmaticobjects.oo.structsubtype.api.StructSubtype;
 import com.pragmaticobjects.oo.structsubtype.codegen.processor.Hack;
 import io.vavr.collection.HashSet;
-import io.vavr.collection.List;
 import io.vavr.collection.Set;
 import java.util.Comparator;
 
@@ -41,9 +40,9 @@ import java.util.Comparator;
 public class CrossDeclarationsSupertypes implements Supertypes {
     private final String packageName;
     private final StructSubtype base;
-    private final List<StructSubtype> neighbors;
+    private final Set<StructSubtype> neighbors;
 
-    public CrossDeclarationsSupertypes(String packageName, StructSubtype base, List<StructSubtype> neighbors) {
+    public CrossDeclarationsSupertypes(String packageName, StructSubtype base, Set<StructSubtype> neighbors) {
         this.packageName = packageName;
         this.base = base;
         this.neighbors = neighbors;
@@ -51,16 +50,21 @@ public class CrossDeclarationsSupertypes implements Supertypes {
 
     @Override
     public final Set<Type> set() {
-        Set<Type> baseTypes = typesByAnnotation(base);
+        final Set<Type> baseTypes = typesByAnnotation(base);
+        System.out.println("> cross declaraions for " + base.name() + " " + baseTypes.map(bt -> bt.name()));
+        
         return neighbors
+            .peek(d -> System.out.println("> " + d.name() + ": " + typesByAnnotation(d).map(Type::name) + " || " + baseTypes.containsAll(typesByAnnotation(d)) + " || " + !d.name().equals(base.name())))
             .filter(d -> baseTypes.containsAll(typesByAnnotation(d)))
-            .filter(d -> !d.equals(base))
+            .filter(d -> !d.name().equals(base.name()))
             .<Type>map(d -> new TypeReferential(packageName, d.name()))
-            .toSortedSet(Comparator.comparing(Type::getFullName));
+            .toSortedSet(Comparator.comparing(Type::getFullName))
+            .peek(d -> System.out.println(">> " + d.name()));
     }
     
     private Set<Type> typesByAnnotation(StructSubtype annotation) {
-        return HashSet.ofAll(Hack.extractTypes(annotation::inherits));
+        HashSet<Type> ofAll = HashSet.ofAll(Hack.extractTypes(annotation::inherits));
+        return ofAll;
     }
     
 }

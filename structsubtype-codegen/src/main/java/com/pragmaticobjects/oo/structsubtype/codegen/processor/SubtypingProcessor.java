@@ -32,13 +32,15 @@ import com.pragmaticobjects.oo.meta.model.Type;
 import com.pragmaticobjects.oo.meta.model.TypeReferential;
 import com.pragmaticobjects.oo.structsubtype.api.StructSubtype;
 import com.pragmaticobjects.oo.structsubtype.supertypes.CombinedSupertypes;
+import com.pragmaticobjects.oo.structsubtype.supertypes.CrossDeclarationsSupertypes;
 import com.pragmaticobjects.oo.structsubtype.supertypes.SupertypesFromDeclaration;
 import io.vavr.Tuple2;
 import io.vavr.collection.HashMap;
 import io.vavr.collection.HashSet;
+import io.vavr.collection.Map;
+import io.vavr.collection.Set;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.processing.AbstractProcessor;
@@ -55,41 +57,51 @@ import javax.tools.JavaFileObject;
  * @author skapral
  */
 @SupportedAnnotationTypes({
+    "com.pragmaticobjects.oo.structsubtype.api.StructSubtype.List",
     "com.pragmaticobjects.oo.structsubtype.api.StructSubtype"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class SubtypingProcessor extends AbstractProcessor {
     @Override
-    public final boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        HashSet<PackageElement> elements = HashSet
-            .ofAll(roundEnv.getElementsAnnotatedWith(StructSubtype.class))
+    public final boolean process(java.util.Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        HashSet<PackageElement> elements = HashSet.ofAll(annotations)
+            .flatMap(a -> roundEnv.getElementsAnnotatedWith(a))
             .map(e -> (PackageElement) e);
-        for(PackageElement elem : elements) {
-            StructSubtype anno = elem.getAnnotation(StructSubtype.class);
-            String packageName = ((PackageElement)elem).getQualifiedName().toString();
-            FreemarkerArtifactModel model = new FAMStandard(
-                new TypeReferential(packageName, anno.name()),
-                HashMap.ofEntries(
-                    new Tuple2<>(
-                        "supertypes",
-                        new CombinedSupertypes(
-                            new SupertypesFromDeclaration(anno)
-                        ).set()
+        Map<String, Set<StructSubtype>> packageAnnotationsMap = elements.collect(
+            HashMap.collector(
+                e -> e.getQualifiedName().toString(),
+                elem -> HashSet.of(elem.getAnnotationsByType(StructSubtype.class))
+            )
+        );
+        for(Tuple2<String, Set<StructSubtype>> packageAnnotations : packageAnnotationsMap) {
+            Set<StructSubtype> annos = packageAnnotations._2;
+            String packageName = packageAnnotations._1;
+            for(StructSubtype anno : annos) {
+                FreemarkerArtifactModel model = new FAMStandard(
+                    new TypeReferential(packageName, anno.name()),
+                    HashMap.ofEntries(
+                        new Tuple2<>(
+                            "supertypes",
+                            new CombinedSupertypes(
+                                new SupertypesFromDeclaration(anno),
+                                new CrossDeclarationsSupertypes(packageName, anno, annos)
+                            ).set()
+                        )
                     )
-                )
-            );
-            FreemarkerArtifact artifact = new FreemarkerArtifact(
-                "structsubtype",
-                model
-            );
-            try {
-                JavaFileObject newSrc = processingEnv.getFiler().createSourceFile(model.<Type>get("this").getFullName());
-                try(OutputStream os = newSrc.openOutputStream()) {
-                    os.write(artifact.contents().getBytes());
-                    os.flush();
+                );
+                FreemarkerArtifact artifact = new FreemarkerArtifact(
+                    "structsubtype",
+                    model
+                );
+                try {
+                    JavaFileObject newSrc = processingEnv.getFiler().createSourceFile(model.<Type>get("this").getFullName());
+                    try(OutputStream os = newSrc.openOutputStream()) {
+                        os.write(artifact.contents().getBytes());
+                        os.flush();
+                    }
+                } catch (IOException ex) {
+                    Logger.getLogger(SubtypingProcessor.class.getName()).log(Level.SEVERE, null, ex);
                 }
-            } catch (IOException ex) {
-                Logger.getLogger(SubtypingProcessor.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         return false;

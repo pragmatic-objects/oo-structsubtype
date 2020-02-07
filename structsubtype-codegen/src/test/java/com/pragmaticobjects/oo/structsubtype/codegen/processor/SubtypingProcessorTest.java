@@ -38,7 +38,7 @@ import java.nio.file.Paths;
 public class SubtypingProcessorTest extends TestsSuite {
     public SubtypingProcessorTest() {
         super(
-            new TestCase(
+            /*new TestCase(
                 "Test subtyping generation",
                 new AssertAnnotationProcessorGeneratesFiles(
                     new SubtypingProcessor(),
@@ -58,6 +58,46 @@ public class SubtypingProcessorTest extends TestsSuite {
                                 "",
                                 "",
                                 "public interface D extends A, B, C {",
+                                "}",
+                                ""
+                            )
+                        )
+                    )
+                )
+            ),*/
+            new TestCase(
+                "Test subtyping generation -- complex scenario",
+                new AssertAnnotationProcessorGeneratesFiles(
+                    new SubtypingProcessor(),
+                    Paths.get("com", "test", "package-info.java"),
+                    String.join(
+                        System.lineSeparator(),
+                        "@StructSubtype(name = \"D\", inherits = {A.class, B.class, C.class})",
+                        "@StructSubtype(name = \"E\", inherits = {A.class, B.class})",
+                        "package com.test;",
+                        "import com.pragmaticobjects.oo.structsubtype.api.StructSubtype;"
+                    ),
+                    List.of(
+                        new AssertAnnotationProcessorGeneratesFiles.File(
+                            Paths.get("com", "test", "D.java"),
+                            String.join(
+                                System.lineSeparator(),
+                                "package com.test;",
+                                "",
+                                "",
+                                "public interface D extends A, B, C, E {",
+                                "}",
+                                ""
+                            )
+                        ),
+                        new AssertAnnotationProcessorGeneratesFiles.File(
+                            Paths.get("com", "test", "E.java"),
+                            String.join(
+                                System.lineSeparator(),
+                                "package com.test;",
+                                "",
+                                "",
+                                "public interface E extends A, B {",
                                 "}",
                                 ""
                             )
