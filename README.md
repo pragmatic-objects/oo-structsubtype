@@ -4,11 +4,7 @@
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/7we0mja0vs7kc9lh?svg=true)](https://ci.appveyor.com/project/skapral/oo-structsubtype)
 [![Codecov](https://codecov.io/gh/pragmatic-objects/oo-structsubtype/branch/master/graph/badge.svg)](https://codecov.io/gh/pragmatic-objects/oo-structsubtype)
 
-Annoation processor that enables declaring Java interfaces with primitive structural subtyping support
-
-## Why?
-
-TODO
+Annoation processor that enables declaring Java interfaces with imitation of structural subtyping support
 
 ## Quick start
 
@@ -35,9 +31,9 @@ interface UserAddress {
 }
 ```
 
-3. Place `@StructSubtypeDeclaration` to the `package-info.java` of the package where you want the subtype to be generated
+3. Place `@StructSubtype` declaration to the `package-info.java` of the package where you want the subtype to be generated
 
-```
+```java
 @StructSubtype(name = "User", inherits = { UserName.class, UserAddress.class }
 package com.example;
 
@@ -46,9 +42,21 @@ import com.pragmaticobjects.oo.structsubtype.api.StructSubtype;
 
 4. Build the project. A source for new type will be generated at the annotated package. The type will be substitutable at each of it's testators.
 
-```
+```java
 interface User extends UserName, UserAddress {}
 ```
 
-TO BE CONTINUED
+Note that generated interfaces within one package may be subtypes of each other, if one inherits all features of the other:
+
+```java
+@StructSubtype(name = "Recipient", inherits = { UserName.class, UserAddress.class }
+@StructSubtype(name = "PassportIdentity", inherits = { UserName.class, PassportId.class }
+@StructSubtype(name = "User", inherits = { UserName.class, PassportId.class, UserAddress.class  }
+package com.example;
+```
+
+```java
+// Since `User` inherits every feature of `Recipient` and `PassportIdentity`, it is considered as a subtype of them.
+interface User extends UserName, PassportId, UserAddress, Recipient, PassportIdentity {}
+```
 
